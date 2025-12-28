@@ -1,0 +1,113 @@
+--!strict
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local pGui = player:WaitForChild("PlayerGui")
+
+-- TWORZENIE GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "StableTP"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = pGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 200, 0, 130)
+frame.Position = UDim2.new(0.5, -100, 0.4, 0)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BorderSizePixel = 0
+frame.Active = true -- To pozwala na interakcję
+frame.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 10)
+corner.Parent = frame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Text = "BRAINROT TP"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.BackgroundColor3 = Color3.fromRGB(60, 0, 180)
+title.Font = Enum.Font.GothamBold
+title.Parent = frame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.Parent = title
+
+local setBtn = Instance.new("TextButton")
+setBtn.Size = UDim2.new(0.9, 0, 0, 35)
+setBtn.Position = UDim2.new(0.05, 0, 0.35, 0)
+setBtn.Text = "SET POSITION"
+setBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+setBtn.TextColor3 = Color3.new(1, 1, 1)
+setBtn.Font = Enum.Font.GothamBold
+setBtn.Parent = frame
+
+local tpBtn = Instance.new("TextButton")
+tpBtn.Size = UDim2.new(0.9, 0, 0, 35)
+tpBtn.Position = UDim2.new(0.05, 0, 0.7, 0)
+tpBtn.Text = "TELEPORT"
+tpBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 50)
+tpBtn.TextColor3 = Color3.new(1, 1, 1)
+tpBtn.Font = Enum.Font.GothamBold
+tpBtn.Parent = frame
+
+-----------------------------------------------------------
+-- NOWA LOGIKA PRZESUWANIA (DRAG)
+-----------------------------------------------------------
+local dragging = false
+local dragStart = Vector3.new()
+local startPos = UDim2.new()
+
+frame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+		
+		-- Połączenie do wykrywania puszczenia przycisku
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - dragStart
+		frame.Position = UDim2.new(
+			startPos.X.Scale, 
+			startPos.X.Offset + delta.X, 
+			startPos.Y.Scale, 
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+-----------------------------------------------------------
+-- LOGIKA TELEPORTACJI
+-----------------------------------------------------------
+local savedLocation: CFrame? = nil
+
+setBtn.MouseButton1Click:Connect(function()
+	local char = player.Character
+	if char then
+		savedLocation = char:GetPivot()
+		setBtn.Text = "✅ SAVED"
+		task.wait(0.5)
+		setBtn.Text = "SET POSITION"
+	end
+end)
+
+tpBtn.MouseButton1Click:Connect(function()
+	local char = player.Character
+	if char and savedLocation then
+		char:PivotTo(savedLocation)
+	else
+		tpBtn.Text = "❌ NO POS"
+		task.wait(0.5)
+		tpBtn.Text = "TELEPORT"
+	end
+end)
